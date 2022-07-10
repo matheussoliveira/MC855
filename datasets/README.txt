@@ -1,9 +1,3 @@
-
-This folder contains the FVC2006 fingerprint databases and the index files. 
-Files index_a.MFR and index_a.MFA list the genuine and impostor comparisons that have to be 
-performed in order to reproduce FVC2006 test on set A of each database. 
-Files index_b.MFR and index_b.MFA list the genuine and impostor comparisons that have to be 
-performed in order to reproduce FVC2006 test on set B of each database. 
-
-For more information visit http://bias.csr.unibo.it/fvc2006
-
+version https://git-lfs.github.com/spec/v1
+oid sha256:aeb9ed0eea2b42f4266a877ebd585cba528f96621854301cc49e4a2128d23155
+size 481

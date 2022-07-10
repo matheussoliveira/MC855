@@ -6,6 +6,7 @@ import torch
 from torch_snippets import *
 from torchvision import models, transforms
 from torchvision.transforms.transforms import ToPILImage
+import json
 
 # Helpers
 
@@ -13,12 +14,11 @@ def buildPathFor(relative_path):
     script_dir = os.path.dirname(__file__) # Absolute dir the script is in
     return os.path.join(script_dir, relative_path)
 
-
 # Permite a duplicação de partes da biblioteca
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 print(torch.zeros(1).cuda) # Verifica se a GPU é compativel
-device = 'cuda' if torch.cuda.is_available() else 'cpu' # colab offers limited gpu acess
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(device)
 
 # Parte 1
@@ -298,20 +298,27 @@ for epoch in range(nepochs):
             log.record(epoch+(1+i)/N, val_loss=batch_loss, val_acc=batch_acc, end='\r')  
 log.plot_epochs()       
 
-
 torch.save(model.state_dict(), "saved_model_state_dict.pth")
 
-files.download('saved_model_state_dict.pth')
+# saved_model_state_dict_path = buildPathFor("datasets/content/saved_model_state_dict.pth")
+
+# with open(saved_model_state_dict_path, 'w') as dict:
+#     items_list = list(model.state_dict().items())
+#     dict.write(json.dumps(items_list))
+# dict.close()
+
+# files.download('saved_model_state_dict.pth')
 
 # Parte 4
 
 # Se já possui um modelo treinado, carregue os pesos
-model_path = '/content/saved_model_state_dict.pth'
+# model_path = buildPathFor('datasets/content/saved_model_state_dict.pth')
+model_path = "saved_model_state_dict.pth"
 model.load_state_dict(torch.load(model_path))
 model.eval()
 
-test_image_folder = "/content/datasets/DB1_A" # folder with images of a dataset
-test_imagenames_file = "/content/datasets/comparisons_A.txt" # csv file with image comparisons for test
+test_image_folder = buildPathFor("datasets/DB1_A") # folder with images of a dataset
+test_imagenames_file = buildPathFor("datasets/comparisons_A.txt") # csv file with image comparisons for test
 testload = GetBatches(test_image_folder, test_imagenames_file, batchsize, prep)
 
 # Parte 5 - Deploy
@@ -323,17 +330,15 @@ Acc = []
 Loss = []
 contrastive_thres = 0.9
 
-
-#process all batches
+# Process all batches
 for ix, data in enumerate(testload):
     imgsA, imgsB, labels = [t.to(device) for t in data]
     with torch.no_grad():
-      codesA, codesB       = model(imgsA, imgsB)
+      codesA, codesB = model(imgsA, imgsB)
 
-      loss, acc            = criterion(codesA, codesB, labels)
+      loss, acc = criterion(codesA, codesB, labels)
       Acc.append(acc.detach().cpu().numpy())
       Loss.append(loss.detach().cpu().numpy())
-
 
 # Como o dataset é desbalanceado, talvez seja interessante propor e 
 # explorar outras métricas que não sejam apenas a acurácia e a Loss para a validação!
@@ -345,23 +350,25 @@ different = []
 same = []
 model.eval()
 
-image_folder = '/content/datasets/DB1_A'
-imagenames_file = '/content/datasets/comparisons_A.txt'
+image_folder = buildPathFor('datasets/DB1_A')
+imagenames_file = buildPathFor('datasets/comparisons_A.txt')
 
-dataset       = SiameseNetworkDataset(image_folder=image_folder, imagenames_file = imagenames_file, transform=prep)
+dataset = SiameseNetworkDataset(image_folder=image_folder, imagenames_file = imagenames_file, transform=prep)
 
-dataloader    = DataLoader(dataset,batch_size=1,shuffle=True)
+dataloader = DataLoader(dataset, batch_size = 1, shuffle = True)
 
 for ix, data in enumerate(dataloader):
-  if (ix + 1)%1000 == 0:
+  if (ix + 1) % 1000 == 0:
     print('Processing batch {}/{}'.format((ix + 1), len(dataloader)))
+
   imgsA, imgsB, labels = [t.to(device) for t in data]
-  codesA, codesB       = model(imgsA, imgsB)
+  codesA, codesB = model(imgsA, imgsB)
 
   with torch.no_grad():
-    euclidean_distance        = F.pairwise_distance(codesA, codesB)
+    euclidean_distance = F.pairwise_distance(codesA, codesB)
     if (labels == 0): # same person
       same.append(euclidean_distance.item())
+    
     else:
       different.append(euclidean_distance.item())
 
@@ -379,27 +386,31 @@ plt.plot()
 model.eval()
 do_comparison = 'y'
 
-image_folder = '/content/datasets/DB1_A'
-imagenames_file = '/content/datasets/comparisons_A.txt'
+image_folder = buildPathFor('datasets/DB1_A')
+imagenames_file = buildPathFor('datasets/comparisons_A.txt')
 
-dataset = SiameseNetworkDataset(image_folder=image_folder, imagenames_file = imagenames_file, transform=prep)
+dataset = SiameseNetworkDataset(image_folder = image_folder, imagenames_file = imagenames_file, transform = prep)
 
-dataloader = DataLoader(dataset,batch_size=1,shuffle=True)
+dataloader = DataLoader(dataset, batch_size = 1, shuffle = True)
 
-while(do_comparison=='y'):
+while(do_comparison == 'y'):
     dataiter = iter(dataloader)
     image1, image2, truelabel = next(dataiter)
     concatenated = torch.cat((image1*0.5+0.5, image2*0.5+0.5),0)
     output1,output2 = model(image1,image2)
     euclidean_distance = F.pairwise_distance(output1, output2)
+    
     if (euclidean_distance.item() <= contrastive_thres):
         if (truelabel != 0):
             output = 'Same Person, which is an error.'
+        
         else:
             output = 'Same Person, which is correct.'
+    
     else:
         if (truelabel == 0):
             output = 'Different, which is an error.'
+        
         else:
             output = 'Different, which is correct.'
     
