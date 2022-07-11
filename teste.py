@@ -7,6 +7,7 @@ from torch_snippets import *
 from torchvision import models, transforms
 from torchvision.transforms.transforms import ToPILImage
 import json
+from numba import jit, cuda
 
 # Helpers
 
@@ -146,8 +147,8 @@ image1, image2, label = dataset[sample]
 
 # Visualizando as duas imagens de entrada, bem como o label
 nchannels = image1.shape[0]
-height    = image1.shape[1]
-width     = image1.shape[2]
+height = image1.shape[1]
+width = image1.shape[2]
 
 print("Images are {}x{}x{}".format(width,height,nchannels))
 
@@ -185,7 +186,7 @@ class SiameseNetwork(nn.Module):
             nn.Linear(512, 256), nn.ReLU(inplace=True),
             nn.Linear(256, 64)
         )
-
+  
     def forward(self, input1, input2):
         output1 = self.features(input1)
         output2 = self.features(input2)
@@ -277,7 +278,7 @@ model = SiameseNetwork().to(device)
 # model = SiameseNetworkVGGBackbone().to(device)
 
 criterion = ContrastiveLoss()
-optimizer = optim.Adam(model.parameters(),lr = 0.001, weight_decay=0.01)
+optimizer = optim.Adam(model.parameters(), lr = 0.001, weight_decay = 0.01)
 nepochs = 30 # default training value was 200, but requires a lot of time
 
 contrastive_thres = 1.1
@@ -300,15 +301,6 @@ log.plot_epochs()
 
 torch.save(model.state_dict(), "saved_model_state_dict.pth")
 
-# saved_model_state_dict_path = buildPathFor("datasets/content/saved_model_state_dict.pth")
-
-# with open(saved_model_state_dict_path, 'w') as dict:
-#     items_list = list(model.state_dict().items())
-#     dict.write(json.dumps(items_list))
-# dict.close()
-
-# files.download('saved_model_state_dict.pth')
-
 # Parte 4
 
 # Se já possui um modelo treinado, carregue os pesos
@@ -323,7 +315,7 @@ testload = GetBatches(test_image_folder, test_imagenames_file, batchsize, prep)
 
 # Parte 5 - Deploy
 
-#put model in evaluation mode
+# Put model in evaluation mode
 model.eval()
 
 Acc = []
@@ -396,8 +388,8 @@ dataloader = DataLoader(dataset, batch_size = 1, shuffle = True)
 while(do_comparison == 'y'):
     dataiter = iter(dataloader)
     image1, image2, truelabel = next(dataiter)
-    concatenated = torch.cat((image1*0.5+0.5, image2*0.5+0.5),0)
-    output1,output2 = model(image1,image2)
+    concatenated = torch.cat((image1 * 0.5 + 0.5, image2 * 0.5 + 0.5), 0)
+    output1, output2 = model(image1, image2)
     euclidean_distance = F.pairwise_distance(output1, output2)
     
     if (euclidean_distance.item() <= contrastive_thres):
