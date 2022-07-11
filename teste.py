@@ -387,7 +387,7 @@ dataloader = DataLoader(dataset, batch_size = 1, shuffle = True)
 
 while(do_comparison == 'y'):
     dataiter = iter(dataloader)
-    image1, image2, truelabel = next(dataiter)
+    image1, image2, truelabel = [t.to(device) for t in next(dataiter)]
     concatenated = torch.cat((image1 * 0.5 + 0.5, image2 * 0.5 + 0.5), 0)
     output1, output2 = model(image1, image2)
     euclidean_distance = F.pairwise_distance(output1, output2)
