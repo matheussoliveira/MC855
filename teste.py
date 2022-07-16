@@ -223,9 +223,10 @@ class ContrastiveLoss(torch.nn.Module):
     Based on: http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
     """
 
-    def __init__(self, margin=2.0):
+    def __init__(self, margin = 2.0):
         super(ContrastiveLoss, self).__init__()
         self.margin = margin
+
     def forward(self, output1, output2, label):
         euclidean_distance = F.pairwise_distance(output1, output2, keepdim = True)
         loss_contrastive = torch.mean((1-label) * torch.pow(euclidean_distance, 2)/2 +
@@ -263,40 +264,40 @@ def GetBatches(image_folder, image_names, batchsize, transformation):
     return(dataloader)
 
 # as transformations, you may choose None, prep, or aug. However, aug applies to the training set only
-trainload = GetBatches(image_folder, train_imagenames_file, batchsize, prep)  
-validload = GetBatches(image_folder, valid_imagenames_file, batchsize, prep)
+# trainload = GetBatches(image_folder, train_imagenames_file, batchsize, prep)  
+# validload = GetBatches(image_folder, valid_imagenames_file, batchsize, prep)
 
-# trainload = GetBatches(image_folder, train_imagenames_file, batchsize, prepVGG)  # descomentar essa parte se for usar o backbone da VGG
-# validload = GetBatches(image_folder, valid_imagenames_file, batchsize, prepVGG)
+trainload = GetBatches(image_folder, train_imagenames_file, batchsize, prepVGG)  # descomentar essa parte se for usar o backbone da VGG
+validload = GetBatches(image_folder, valid_imagenames_file, batchsize, prepVGG)
 
 print("Quantidade de batches de treino: ", len(trainload))
 print("Quantidade de batches de validação: ", len(validload))
 
 inspect(next(iter(trainload))) # inspect a couple of items in the batches
 
-model = SiameseNetwork().to(device)
-# model = SiameseNetworkVGGBackbone().to(device)
+# model = SiameseNetwork().to(device)
+model = SiameseNetworkVGGBackbone().to(device)
 
 criterion = ContrastiveLoss()
 optimizer = optim.Adam(model.parameters(), lr = 0.001, weight_decay = 0.01)
-nepochs = 30 # default training value was 200, but requires a lot of time
+nepochs = 200 # default training value was 200, but requires a lot of time
 
 contrastive_thres = 1.1
 
 
-nepochs = 5
+nepochs = 33
 log = Report(nepochs)
 for epoch in range(nepochs):
     N = len(trainload)
     for i, data in enumerate(trainload):
         batch_loss, batch_acc = train_batch(model, data, optimizer, criterion)
-        log.record(epoch+(1+i)/N, trn_loss=batch_loss, trn_acc=batch_acc, end='\r')
+        log.record(epoch+(1+i)/N, trn_loss = batch_loss, trn_acc = batch_acc, end='\r')
 
     N = len(validload)
     with torch.no_grad():
         for i, data in enumerate(validload):
             batch_loss, batch_acc = valid_batch(model, data, criterion)
-            log.record(epoch+(1+i)/N, val_loss=batch_loss, val_acc=batch_acc, end='\r')  
+            log.record(epoch+(1+i)/N, val_loss = batch_loss, val_acc = batch_acc, end='\r')  
 log.plot_epochs()       
 
 torch.save(model.state_dict(), "saved_model_state_dict.pth")
@@ -311,7 +312,7 @@ model.eval()
 
 test_image_folder = buildPathFor("datasets/DB1_A") # folder with images of a dataset
 test_imagenames_file = buildPathFor("datasets/comparisons_A.txt") # csv file with image comparisons for test
-testload = GetBatches(test_image_folder, test_imagenames_file, batchsize, prep)
+testload = GetBatches(test_image_folder, test_imagenames_file, batchsize, prepVGG)
 
 # Parte 5 - Deploy
 
@@ -345,7 +346,7 @@ model.eval()
 image_folder = buildPathFor('datasets/DB1_A')
 imagenames_file = buildPathFor('datasets/comparisons_A.txt')
 
-dataset = SiameseNetworkDataset(image_folder=image_folder, imagenames_file = imagenames_file, transform=prep)
+dataset = SiameseNetworkDataset(image_folder=image_folder, imagenames_file = imagenames_file, transform = prepVGG)
 
 dataloader = DataLoader(dataset, batch_size = 1, shuffle = True)
 
@@ -381,7 +382,7 @@ do_comparison = 'y'
 image_folder = buildPathFor('datasets/DB1_A')
 imagenames_file = buildPathFor('datasets/comparisons_A.txt')
 
-dataset = SiameseNetworkDataset(image_folder = image_folder, imagenames_file = imagenames_file, transform = prep)
+dataset = SiameseNetworkDataset(image_folder = image_folder, imagenames_file = imagenames_file, transform = prepVGG)
 
 dataloader = DataLoader(dataset, batch_size = 1, shuffle = True)
 
