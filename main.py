@@ -256,7 +256,7 @@ def valid_batch(model, data, criterion):
 
 # Parte 3
 
-batchsize = 32
+batchsize = 64
 
 def GetBatches(image_folder, image_names, batchsize, transformation):
     datatensor = SiameseNetworkDataset(image_folder, image_names, transformation) 
@@ -264,28 +264,28 @@ def GetBatches(image_folder, image_names, batchsize, transformation):
     return(dataloader)
 
 # as transformations, you may choose None, prep, or aug. However, aug applies to the training set only
-# trainload = GetBatches(image_folder, train_imagenames_file, batchsize, prep)  
-# validload = GetBatches(image_folder, valid_imagenames_file, batchsize, prep)
+trainload = GetBatches(image_folder, train_imagenames_file, batchsize, prep)  
+validload = GetBatches(image_folder, valid_imagenames_file, batchsize, prep)
 
-trainload = GetBatches(image_folder, train_imagenames_file, batchsize, prepVGG)  # descomentar essa parte se for usar o backbone da VGG
-validload = GetBatches(image_folder, valid_imagenames_file, batchsize, prepVGG)
+# trainload = GetBatches(image_folder, train_imagenames_file, batchsize, prepVGG)  # descomentar essa parte se for usar o backbone da VGG
+# validload = GetBatches(image_folder, valid_imagenames_file, batchsize, prepVGG)
 
 print("Quantidade de batches de treino: ", len(trainload))
 print("Quantidade de batches de validação: ", len(validload))
 
 inspect(next(iter(trainload))) # inspect a couple of items in the batches
 
-# model = SiameseNetwork().to(device)
-model = SiameseNetworkVGGBackbone().to(device)
+model = SiameseNetwork().to(device)
+# model = SiameseNetworkVGGBackbone().to(device)
 
 criterion = ContrastiveLoss()
 optimizer = optim.Adam(model.parameters(), lr = 0.001, weight_decay = 0.01)
-nepochs = 200 # default training value was 200, but requires a lot of time
+# nepochs = 200 # default training value was 200, but requires a lot of time
 
 contrastive_thres = 1.1
 
 
-nepochs = 33
+nepochs = 50
 log = Report(nepochs)
 for epoch in range(nepochs):
     N = len(trainload)
@@ -312,7 +312,8 @@ model.eval()
 
 test_image_folder = buildPathFor("datasets/DB1_A") # folder with images of a dataset
 test_imagenames_file = buildPathFor("datasets/comparisons_A.txt") # csv file with image comparisons for test
-testload = GetBatches(test_image_folder, test_imagenames_file, batchsize, prepVGG)
+testload = GetBatches(test_image_folder, test_imagenames_file, batchsize, prep)
+# testload = GetBatches(test_image_folder, test_imagenames_file, batchsize, prepVGG) # Descomentar para usar o backbone da VGG
 
 # Parte 5 - Deploy
 
@@ -346,7 +347,8 @@ model.eval()
 image_folder = buildPathFor('datasets/DB1_A')
 imagenames_file = buildPathFor('datasets/comparisons_A.txt')
 
-dataset = SiameseNetworkDataset(image_folder=image_folder, imagenames_file = imagenames_file, transform = prepVGG)
+dataset = SiameseNetworkDataset(image_folder=image_folder, imagenames_file = imagenames_file, transform = prep)
+# dataset = SiameseNetworkDataset(image_folder=image_folder, imagenames_file = imagenames_file, transform = prepVGG) # Descomentar para usar o backbone da VGG
 
 dataloader = DataLoader(dataset, batch_size = 1, shuffle = True)
 
@@ -382,7 +384,8 @@ do_comparison = 'y'
 image_folder = buildPathFor('datasets/DB1_A')
 imagenames_file = buildPathFor('datasets/comparisons_A.txt')
 
-dataset = SiameseNetworkDataset(image_folder = image_folder, imagenames_file = imagenames_file, transform = prepVGG)
+dataset = SiameseNetworkDataset(image_folder = image_folder, imagenames_file = imagenames_file, transform = prep)
+# dataset = SiameseNetworkDataset(image_folder = image_folder, imagenames_file = imagenames_file, transform = prepVGG) # Descomentar para usar o backbone da VGG
 
 dataloader = DataLoader(dataset, batch_size = 1, shuffle = True)
 

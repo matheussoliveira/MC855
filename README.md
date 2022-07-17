@@ -2,7 +2,13 @@
 
 Matheus de Souza Oliveira - RA: 203407
 
+Davidson Lisboa Della Piazza - RA: 169786
+
+Maurilio dos Santos Gonçalves - RA: 203648
+
 ## Setup
+
+Para o uso da GPU local, é necessário baixar o Nvidia Cuda ToolKit 11.3.
 
 Para que o projeto possa ser executado, é necessário executar seguintes comandos:
 
@@ -19,5 +25,3 @@ pip install pydotplus
 pip install imageio
 pip install numba
 ```
-
-Para o uso da GPU local, é necessário ainda baixar o Nvidia Cuda ToolKit 11.3.
